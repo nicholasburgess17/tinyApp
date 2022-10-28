@@ -40,8 +40,9 @@ app.get("/urls/:id", (req, res) => {
 app.post("/urls", (req, res) => {
   console.log(req.body); // Log the POST request body to the console
   const id = generateRandomString(6);
+  //let encoded = encodeURIComponent(id)
   urlDatabase[id] = req.body.longURL; // save new url to database
-  return res.redirect("/urls/:id");
+  return res.redirect(`/urls/${id}`); //shows %20 in URL !!!!!!!!REMOVE AT END!!!!!!!!!!!!
 });
 
 app.listen(PORT, () => {

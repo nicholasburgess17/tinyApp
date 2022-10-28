@@ -4,10 +4,10 @@ const PORT = 8080;
 
 app.set("view engine", "ejs");
 
-const generateRandomString = () => {
-  let string = '12345'
+const generateRandomString = (length) => {
+  let string = 'abcdefghijklmnopqrstuvwxyz1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ'
   result = ' '
-  for (let i = 0; i < string.length; i++) {
+  for (let i = 0; i < length; i++) {
   result += string.charAt(Math.floor(Math.random() * string.length));
   }
   return result
@@ -42,7 +42,7 @@ app.get("/urls/:id", (req, res) => {templatevars
 });
 app.post("/urls", (req, res) => {
   console.log(req.body); // Log the POST request body to the console
-  const id = generateRandomString()
+  const id = generateRandomString(6)
   urlDatabase[id] = req.body.longURL
   return res.redirect('/urls')
   //res.end()

@@ -8,7 +8,7 @@ const generateRandomString = () => {
   let string = '12345'
   result = ' '
   for (let i = 0; i < string.length; i++) {
-  result += string.charAt(math.floor(Math.random() * string.length));
+  result += string.charAt(Math.floor(Math.random() * string.length));
   }
   return result
 }
@@ -36,15 +36,20 @@ app.get("/urls", (req, res) => {
 app.get("/urls/new", (req, res) => {
   res.render("urls_new");
 });
-app.get("/urls/:id", (req, res) => {
+app.get("/urls/:id", (req, res) => {templatevars
   const templatevars = {id: req.params.id, longURL: urlDatabase[req.params.id]}
   res.render("urls_show", templatevars)
 });
 app.post("/urls", (req, res) => {
   console.log(req.body); // Log the POST request body to the console
-  res.send("Ok"); // Respond with 'Ok' (we will replace this)
+  const id = generateRandomString()
+  urlDatabase[id] = req.body.longURL
+  return res.redirect('/urls')
+  //res.end()
 });
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
+
+//save {id: longURL,} to urldatabase when it recieves the post request to urls

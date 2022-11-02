@@ -37,19 +37,24 @@ app.get("/urls/:id", (req, res) => {
   };
   res.render("urls_show", templatevars);
 });
-///////////////////////WORK HERE//////////////////////////////
+
 app.get("/u/:id", (req, res) => {
   let id = req.params.id;
   const longURL = urlDatabase[id];
   res.redirect(longURL);
 });
-//////////////////////////////////////////////////////////////
+
 app.post("/urls", (req, res) => {
   console.log(req.body); // Log the POST request body to the console
   const id = generateRandomString(6);
   //let encoded = encodeURIComponent(id)
   urlDatabase[id] = req.body.longURL; // save new url to database
   return res.redirect(`/urls/${id}`); //shows %20 in URL !!!!!!!!REMOVE AT END!!!!!!!!!!!!
+});
+
+app.post("/urls/:id/delete", (req, res) => {
+ delete urlDatabase[req.params.id]
+ res.redirect("/urls/")
 });
 
 app.listen(PORT, () => {

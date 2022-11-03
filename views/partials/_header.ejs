@@ -16,6 +16,19 @@
       <div class="navbar-nav">
         <a class="nav-item nav-link" href="/urls">My URLs</a>
         <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
+        <form method="POST" action="/login">
+          <div class="form-group mb-2">
+            <label for="login">Username</label>
+            <input
+              class="form-control"
+              type="text"
+              name="username"
+              placeholder="Username"
+              style="width: 300px; margin: 1em"
+            /> 
+          <button type="login">login</button>
+          </div>
+        </form>
       </div>
     </div>
   </nav>

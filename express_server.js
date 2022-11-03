@@ -13,7 +13,7 @@ const generateRandomString = (length) => {
   return result;
 };
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
+  b2xVn2: "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com",
 };
 
@@ -53,19 +53,23 @@ app.post("/urls", (req, res) => {
 });
 
 app.post("/urls/:id/delete", (req, res) => {
- delete urlDatabase[req.params.id]
- res.redirect("/urls/")
+  delete urlDatabase[req.params.id];
+  res.redirect("/urls/");
 });
 
 app.post("urls/:id", (req, res) => {
-  
-  res.redirect("/urls/")
+  //route working
+  //grab from input field
+  //repeat
+  //reassign to key
+  //similar to short link redirect to long link
+  res.redirect("/urls/");
+});
+app.post('/login', (req, res) => {
+  const value = (req.body.username)
+  res.cookie("username", value)
+  res.redirect("/urls")
 })
-//route working
-//grab from input field
-//repeat 
-//reassign to key
-//similar to short link redirect to long link
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });

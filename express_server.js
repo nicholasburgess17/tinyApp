@@ -14,7 +14,7 @@ const generateRandomString = (length) => {
   return result;
 };
 const urlDatabase = {
-  b2xVn2: "http://www.lighthouselabs.ca",
+  "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com",
 };
 
@@ -58,11 +58,11 @@ app.get("/u/:id", (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
-  console.log(req.body); // Log the POST request body to the console
+  console.log(req.body); // 
   const id = generateRandomString(6);
-  //let encoded = encodeURIComponent(id)
+ 
   urlDatabase[id] = req.body.longURL; // save new url to database
-  return res.redirect(`/urls/${id}`); //shows %20 in URL !!!!!!!!REMOVE AT END!!!!!!!!!!!!
+  return res.redirect(`/urls/${id}`); 
 });
 
 app.post("/urls/:id/delete", (req, res) => {
@@ -70,13 +70,10 @@ app.post("/urls/:id/delete", (req, res) => {
   res.redirect("/urls/");
 });
 
-app.post("urls/:id", (req, res) => {
-  //route working
-  //grab from input field
-  //repeat
-  //reassign to key
-  //similar to short link redirect to long link
-  res.redirect("/urls/");
+app.post("/urls/:id", (req, res) => {
+  const id = req.params.id
+  urlDatabase[id] = req.body.longURL;
+ res.redirect("/urls");
 });
 
 app.listen(PORT, () => {

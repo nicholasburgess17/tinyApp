@@ -57,6 +57,15 @@ app.post("/urls/:id/delete", (req, res) => {
  res.redirect("/urls/")
 });
 
+app.post("urls/:id", (req, res) => {
+  
+  res.redirect("/urls/")
+})
+//route working
+//grab from input field
+//repeat 
+//reassign to key
+//similar to short link redirect to long link
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });

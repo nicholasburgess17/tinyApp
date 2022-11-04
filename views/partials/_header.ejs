@@ -16,14 +16,14 @@
       <div class="navbar-nav">
         <a class="nav-item nav-link" href="/urls">My URLs</a>
         <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
-        <% if (!username){ %>
+        <% if (!users){ %>
         <form method="POST" action="/login"> 
           <div class="form-group mb-2">
             <input
               class="form-control"
               type="text"
-              name="username"
-              placeholder="Username"
+              name="users"
+              placeholder="Users"
               style="width: 300px; margin: 1em"
             /> 
           <button type="login">login</button>
@@ -31,7 +31,7 @@
           
           <% } else{ %>
             <form method= "POST" action="/logout">
-              <td>Logged in as <%= username %>!</td>
+              <td>Logged in as <%= users.email %>!</td>
             <button type="logout">logout</button>
             <% } %>
           </div>

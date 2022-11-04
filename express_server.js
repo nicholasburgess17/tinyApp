@@ -49,7 +49,7 @@ app.get("/urls.json", (req, res) => {
 app.post("/login", (req, res) => {
   const value = req.body.users;
   res.cookie("user_id", value);
-  res.redirect("/urls");
+  res.redirect("/login");
 });
 //logout
 app.post("/logout", (req, res) => {
@@ -109,6 +109,13 @@ app.get("/error", (req, res) => {
   };
   res.render("error", templatevars)
 });
+app.get("/login", (req, res) => {
+  const templatevars = {
+    urls: urlDatabase,
+    user: users[req.cookies["user_id"]],
+  };
+  res.render("login", templatevars)
+})
 //create short urls
 app.post("/urls", (req, res) => {
   const id = generateRandomString(6);
@@ -130,22 +137,23 @@ app.post("/urls/:id", (req, res) => {
 app.post("/register", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
+  //if email or pass are empty strings send response with 400 status code
+  if (!email|| !password) {
+    res.redirect("/error_page")
+    return;
+  }
+  //if someone registers with an already registered email send response with a 400 error code
+  if (findUserByEmail(email)) {
+    res.redirect("/error")
+    return;
+  }
+  //Setting the new user after all the validations are checked.
   const id = generateRandomString(4).trim();
   users[id] = {
     id,
     email,
     password,
   };
- //if email or pass are empty strings send response with 400 status code
-  if (!email|| !password) {
-    res.redirect("/error_page")
-    return;
-  }
-  //if someone registers with an already registered email send response with a 400 erorr code
-  if (findUserByEmail(email)) {
-    res.redirect("/error")
-    return;
-  }
   res.cookie("user_id", id);
   res.redirect("/urls");
 });

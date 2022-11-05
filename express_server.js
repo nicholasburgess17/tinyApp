@@ -17,7 +17,7 @@ const generateRandomString = (length) => {
 const findUserByEmail = (email) => {
   for (let userID in users) {
     if (users[userID].email === email) {
-      return users[userID]
+      return users[userID];
     }
   }
 };
@@ -46,16 +46,36 @@ app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 //login
-app.post("/login", (req, res) => {
-  const value = req.body.users;
-  res.cookie("user_id", value);
-  res.redirect("/login");
+app.post("/login", (req, res) => {  
+  const password = req.body.password;
+  const email = req.body.email;
+  //lookup email submitted via loginform
+  //no user email found -> error 403
+  for (const userID in users) {
+    
+    if (!findUserByEmail(email)) {
+      console.log("error 403, no account with this email exists");
+      res.redirect("/register");
+      return;
+    }
+    //if email is found, locate password -> match? go to urls after cookies are set to id
+    if (users[userID].password === password) {
+      const value = users[userID].id
+      console.log(value)
+      res.cookie("user_id", value);
+      res.redirect("/urls");
+      return;
+    }
+    console.log("error 403. Password is incorrect");
+    res.redirect("/login");
+  }
+  
 });
 //logout
 app.post("/logout", (req, res) => {
   const value = req.body.users;
   res.clearCookie("user_id", value);
-  res.redirect("/urls");
+  res.redirect("/login");
 });
 //main page
 app.get("/urls", (req, res) => {
@@ -99,7 +119,7 @@ app.get("/error_page", (req, res) => {
     urls: urlDatabase,
     user: users[req.cookies["user_id"]],
   };
-  res.render("error_page", templatevars)
+  res.render("error_page", templatevars);
 });
 //user already exists
 app.get("/error", (req, res) => {
@@ -107,15 +127,15 @@ app.get("/error", (req, res) => {
     urls: urlDatabase,
     user: users[req.cookies["user_id"]],
   };
-  res.render("error", templatevars)
+  res.render("error", templatevars);
 });
 app.get("/login", (req, res) => {
   const templatevars = {
     urls: urlDatabase,
     user: users[req.cookies["user_id"]],
   };
-  res.render("login", templatevars)
-})
+  res.render("login", templatevars);
+});
 //create short urls
 app.post("/urls", (req, res) => {
   const id = generateRandomString(6);
@@ -138,13 +158,13 @@ app.post("/register", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
   //if email or pass are empty strings send response with 400 status code
-  if (!email|| !password) {
-    res.redirect("/error_page")
+  if (!email || !password) {
+    res.redirect("/error_page");
     return;
   }
   //if someone registers with an already registered email send response with a 400 error code
   if (findUserByEmail(email)) {
-    res.redirect("/error")
+    res.redirect("/error");
     return;
   }
   //Setting the new user after all the validations are checked.

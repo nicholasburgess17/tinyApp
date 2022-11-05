@@ -61,7 +61,6 @@ app.post("/login", (req, res) => {
     //if email is found, locate password -> match? go to urls after cookies are set to id
     if (users[userID].password === password) {
       const value = users[userID].id
-      console.log(value)
       res.cookie("user_id", value);
       res.redirect("/urls");
       return;

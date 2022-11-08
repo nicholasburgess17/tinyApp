@@ -18,11 +18,17 @@ const findUserByEmail = (email) => {
   for (let userID in users) {
     if (users[userID].email === email) {
       const user = users[userID];
-      console.log(user);
       return user;
     }
   }
 };
+const findID = (identity) => {
+  for (let id in urlDatabase) {
+    if(identity === id){
+      return id;
+    }
+  }
+}
 
 //objects
 const urlDatabase = {
@@ -101,18 +107,18 @@ app.get("/urls/new", (req, res) => {
 });
 //individual url pages
 app.get("/urls/:id", (req, res) => {
+  let id = findID(req.params.id)
   const templatevars = {
     id: req.params.id,
-    longURL: urlDatabase[req.params.id],
+    longURL: urlDatabase[id].longURL,
     user: users[req.cookies["user_id"]],
   };
   res.render("urls_show", templatevars);
 });
 //small url redirect to original url
-// If a user tries to access a shortened url (GET /u/:id) that does not exist (:id is not in the database), we should send them a relevant message.
 app.get("/u/:id", (req, res) => {
   let id = req.params.id;
-  const longURL = urlDatabase[id];
+  const longURL = urlDatabase[id].longURL;
   for (let shortURLs in urlDatabase) {
     if(id === shortURLs) {
       return res.redirect(longURL);
@@ -168,7 +174,7 @@ app.post("/urls", (req, res) => {
     return res.send("You must be logged in to create shortened urls!");
   }
   const id = generateRandomString(6);
-  urlDatabase[id] = req.body.longURL; // save new url to database
+  urlDatabase[id].longURL = req.body.longURL; // save new url to database
   return res.redirect(`/urls/${id}`);
 });
 
@@ -179,8 +185,8 @@ app.post("/urls/:id/delete", (req, res) => {
 });
 //add new urls to url database
 app.post("/urls/:id", (req, res) => {
-  const id = req.params.id;
-  urlDatabase[id] = req.body.longURL;
+  const id = req.params[id];
+  urlDatabaseid = req.body[id].longURL;
   res.redirect("/urls");
 });
 //create user ID

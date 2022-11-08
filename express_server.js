@@ -17,14 +17,27 @@ const generateRandomString = (length) => {
 const findUserByEmail = (email) => {
   for (let userID in users) {
     if (users[userID].email === email) {
-      return users[userID];
+      const user = users[userID];
+      console.log(user);
+      return user;
     }
   }
 };
+
 //objects
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com",
+  b6UTxQ: {
+    longURL: "https://www.tsn.ca",
+    userID: "aJ48lW",
+  },
+  i3BoGr: {
+    longURL: "https://www.google.ca",
+    userID: "aJ48lW",
+  },
+  b2xVn2: {
+    longURL: "http://www.lighthouselabs.ca",
+    userID: "6hTvQ7"
+  }
 };
 const users = {
   userRandomID: {
@@ -41,35 +54,28 @@ const users = {
 
 app.use(express.urlencoded({ extended: true }));
 app.use(cookie());
+
 //JSON everything
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 //login
-app.post("/login", (req, res) => {  
+app.post("/login", (req, res) => {
   const password = req.body.password;
   const email = req.body.email;
-  //lookup email submitted via loginform
-  //no user email found -> error 403
-  for (const userID in users) {
-    
-    if (!findUserByEmail(email)) {
-      console.log("error 403, no account with this email exists");
-      res.redirect("/register");
-      return;
-    }
-    //if email is found, locate password -> match? go to urls after cookies are set to id
-    if (users[userID].password === password) {
-      const value = users[userID].id
-      res.cookie("user_id", value);
-      res.redirect("/urls");
-      return;
-    }
-    console.log("error 403. Password is incorrect");
-    res.redirect("/login");
+  const user = findUserByEmail(email);
+  if (user) {
+    const userID = user.id;
+    res.cookie("user_id", userID);
+    return res.redirect("/urls");
+  } else {
+    res.send("Error 403, No account with this email exists");
   }
-  
+  if (password !== user.password) {
+    return res.send("error 403, Password is incorrect");
+  }
 });
+
 //logout
 app.post("/logout", (req, res) => {
   const value = req.body.users;
@@ -87,6 +93,10 @@ app.get("/urls", (req, res) => {
 //add new urls
 app.get("/urls/new", (req, res) => {
   const templatevars = { user: users[req.cookies["user_id"]] };
+  const cookie = req.cookies["user_id"];
+  if (!cookie) {
+    return res.redirect("/login");
+  }
   res.render("urls_new", templatevars);
 });
 //individual url pages
@@ -99,10 +109,16 @@ app.get("/urls/:id", (req, res) => {
   res.render("urls_show", templatevars);
 });
 //small url redirect to original url
+// If a user tries to access a shortened url (GET /u/:id) that does not exist (:id is not in the database), we should send them a relevant message.
 app.get("/u/:id", (req, res) => {
   let id = req.params.id;
   const longURL = urlDatabase[id];
-  res.redirect(longURL);
+  for (let shortURLs in urlDatabase) {
+    if(id === shortURLs) {
+      return res.redirect(longURL);
+    }
+}
+return res.send("that tinyURL doesnt exist!");
 });
 //register users
 app.get("/register", (req, res) => {
@@ -110,9 +126,13 @@ app.get("/register", (req, res) => {
     urls: urlDatabase,
     user: users[req.cookies["user_id"]],
   };
+  const cookie = req.cookies["user_id"];
+  if (cookie) {
+    res.cookie("user_id", cookie);
+    return res.redirect("/urls");
+  }
   res.render("register", templatevars);
 });
-//error 400, empty email or password when registering
 app.get("/error_page", (req, res) => {
   const templatevars = {
     urls: urlDatabase,
@@ -128,19 +148,30 @@ app.get("/error", (req, res) => {
   };
   res.render("error", templatevars);
 });
+
 app.get("/login", (req, res) => {
   const templatevars = {
     urls: urlDatabase,
     user: users[req.cookies["user_id"]],
   };
+  const cookie = req.cookies["user_id"];
+  if (cookie) {
+    res.cookie("user_id", cookie);
+    return res.redirect("/urls");
+  }
   res.render("login", templatevars);
 });
 //create short urls
 app.post("/urls", (req, res) => {
+  const cookie = req.cookies["user_id"];
+  if (!cookie) {
+    return res.send("You must be logged in to create shortened urls!");
+  }
   const id = generateRandomString(6);
   urlDatabase[id] = req.body.longURL; // save new url to database
   return res.redirect(`/urls/${id}`);
 });
+
 //remove urls
 app.post("/urls/:id/delete", (req, res) => {
   delete urlDatabase[req.params.id];
@@ -156,12 +187,10 @@ app.post("/urls/:id", (req, res) => {
 app.post("/register", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
-  //if email or pass are empty strings send response with 400 status code
   if (!email || !password) {
     res.redirect("/error_page");
     return;
   }
-  //if someone registers with an already registered email send response with a 400 error code
   if (findUserByEmail(email)) {
     res.redirect("/error");
     return;

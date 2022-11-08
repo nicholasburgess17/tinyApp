@@ -94,6 +94,10 @@ app.get("/urls", (req, res) => {
     urls: urlDatabase,
     user: users[req.cookies["user_id"]],
   };
+  const cookie = req.cookies["user_id"];
+  if(!cookie) {
+    res.send("maybe you should login first")
+  }
   res.render("urls_index", templatevars);
 });
 //add new urls

@@ -1,6 +1,7 @@
 const express = require("express");
 const app = express();
 const cookie = require("cookie-parser");
+const bcrypt = require("bcryptjs")
 const PORT = 8080;
 
 app.set("view engine", "ejs");
@@ -59,7 +60,7 @@ const users = {
   h6TvQ7: {
     id: "h6TvQ7",
     email: "user@example.com",
-    password: "1234",
+    password: "$2y$10$3U8WZ/PJabDktP/gDQ2PN./2gT.Msaa4TMTeuhknHBtjPDIH6Bq3O",
   },
   user2RandomID: {
     id: "user2RandomID",
@@ -80,6 +81,11 @@ app.post("/login", (req, res) => {
   const password = req.body.password;
   const email = req.body.email;
   const user = findUserByEmail(email);
+  console.log(user.password)
+  console.log(password)
+  if (!bcrypt.compareSync(password, user.password)) {
+    return res.send("error 403, Password is incorrect");
+  }
   if (user) {
     const userID = user.id;
     res.cookie("user_id", userID);
@@ -87,9 +93,8 @@ app.post("/login", (req, res) => {
   } else {
     res.send("Error 403, No account with this email exists");
   }
-  if (password !== user.password) {
-    return res.send("error 403, Password is incorrect");
-  }
+  
+
 });
 
 //logout
@@ -228,6 +233,7 @@ app.post("/urls/:id", (req, res) => {
 app.post("/register", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
+  const hashed = bcrypt.hashSync(password, 10)
   if (!email || !password) {
     res.redirect("/error_page");
     return;
@@ -241,7 +247,7 @@ app.post("/register", (req, res) => {
   users[id] = {
     id,
     email,
-    password,
+    password: hashed,
   };
   res.cookie("user_id", id);
   res.redirect("/urls");

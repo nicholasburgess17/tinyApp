@@ -7,7 +7,11 @@ const PORT = 8080;
 app.set("view engine", "ejs");
 
 //helper functions
-const { findUserByEmail, generateRandomString, urlsForUser } = require("./helper")
+const {
+  findUserByEmail,
+  generateRandomString,
+  urlsForUser,
+} = require("./helper");
 
 //objects
 const urlDatabase = {
@@ -130,21 +134,6 @@ app.get("/register", (req, res) => {
   }
   res.render("register", templatevars);
 });
-app.get("/error_page", (req, res) => {
-  const templatevars = {
-    urls: urlDatabase,
-    user: users[req.session.user_id],
-  };
-  res.render("error_page", templatevars);
-});
-//user already exists
-app.get("/error", (req, res) => {
-  const templatevars = {
-    urls: urlDatabase,
-    user: users[req.session.user_id],
-  };
-  res.render("error", templatevars);
-});
 
 app.get("/login", (req, res) => {
   const templatevars = {
@@ -202,11 +191,11 @@ app.post("/register", (req, res) => {
   const password = req.body.password;
   const hashed = bcrypt.hashSync(password, 10);
   if (!email || !password) {
-    res.redirect("/error_page");
+    res.send('you need to input a valid password and email')
     return;
   }
   if (findUserByEmail(email, users)) {
-    res.redirect("/error");
+    res.send('an account with this email already exists')
     return;
   }
   //Setting the new user after all the validations are checked.

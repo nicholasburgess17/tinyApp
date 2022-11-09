@@ -1,7 +1,7 @@
 const express = require("express");
 const app = express();
-const cookie = require("cookie-parser");
 const bcrypt = require("bcryptjs")
+const cookieSession =require("cookie-session")
 const PORT = 8080;
 
 app.set("view engine", "ejs");
@@ -20,13 +20,6 @@ const findUserByEmail = (email) => {
     if (users[userID].email === email) {
       const user = users[userID];
       return user;
-    }
-  }
-};
-const findID = (identity, urlDatabase) => {
-  for (let id in urlDatabase) {
-    if(identity === id){
-      return id;
     }
   }
 };
@@ -70,8 +63,10 @@ const users = {
 };
 
 app.use(express.urlencoded({ extended: true }));
-app.use(cookie());
-
+app.use(cookieSession({
+  name: 'session',
+  keys: ['key1'],
+}))
 //JSON everything
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
@@ -86,40 +81,39 @@ app.post("/login", (req, res) => {
   if (!bcrypt.compareSync(password, user.password)) {
     return res.send("error 403, Password is incorrect");
   }
-  if (user) {
+  if (!user) {
+    return res.send("Error 403, No account with this email exists"); 
+  } 
     const userID = user.id;
-    res.cookie("user_id", userID);
+    req.session.user_id = userID;
     return res.redirect("/urls");
-  } else {
-    res.send("Error 403, No account with this email exists");
-  }
-  
-
 });
 
 //logout
 app.post("/logout", (req, res) => {
-  const value = req.body.users;
-  res.clearCookie("user_id", value);
+  req.session = null;
   res.redirect("/login");
 });
 //main page
 app.get("/urls", (req, res) => {
-  const cookie = req.cookies["user_id"];
-  const filtered = urlsForUser(cookie, urlDatabase)
-  const templatevars = {
-    urls: filtered,
-    user: users[req.cookies["user_id"]],
-  };
+
+  const cookie = req.session.user_id;
   if(!cookie) {
     res.send("maybe you should login first")
   }
+  const filtered = urlsForUser(cookie, urlDatabase)
+  const templatevars = {
+    urls: filtered,
+    user: users[cookie],
+    userID: cookie
+  };
+  
   res.render("urls_index", templatevars);
 });
 //add new urls
 app.get("/urls/new", (req, res) => {
-  const templatevars = { user: users[req.cookies["user_id"]] };
-  const cookie = req.cookies["user_id"];
+  const templatevars = { user: users[req.session.user_id]};
+  const cookie = req.session.user_id;
   if (!cookie) {
     return res.redirect("/login");
   }
@@ -127,17 +121,16 @@ app.get("/urls/new", (req, res) => {
 });
 //individual url pages
 app.get("/urls/:id", (req, res) => {
-  const  id = findID(req.params.id)
   const templatevars = {
     id: req.params.id,
-    longURL: urlDatabase[id].longURL,
-    user: users[req.cookies["user_id"]],
+    longURL: urlDatabase[req.params.id].longURL,
+    user: users[req.session.user_id],
   };
-  const cookie = req.cookies["user_id"]
+  const cookie = req.session.user_id
   if (!cookie) {
     res.send('please login to view this page')
   };
-  if (cookie !== urlDatabase[id].userID) {
+  if (cookie !== urlDatabase[req.params.id].userID) {
     res.send("you don't have the correct permissions to view this url")
   }
   res.render("urls_show", templatevars);
@@ -154,11 +147,11 @@ return res.send("that tinyURL doesnt exist!");
 app.get("/register", (req, res) => {
   const templatevars = {
     urls: urlDatabase,
-    user: users[req.cookies["user_id"]],
+    user: users[req.session.user_id],
   };
-  const cookie = req.cookies["user_id"];
+  const cookie = req.session.user_id;
   if (cookie) {
-    res.cookie("user_id", cookie);
+    req.session.user_id
     return res.redirect("/urls");
   }
   res.render("register", templatevars);
@@ -166,7 +159,7 @@ app.get("/register", (req, res) => {
 app.get("/error_page", (req, res) => {
   const templatevars = {
     urls: urlDatabase,
-    user: users[req.cookies["user_id"]],
+    user: users[req.session.user_id],
   };
   res.render("error_page", templatevars);
 });
@@ -174,7 +167,7 @@ app.get("/error_page", (req, res) => {
 app.get("/error", (req, res) => {
   const templatevars = {
     urls: urlDatabase,
-    user: users[req.cookies["user_id"]],
+    user: users[req.session.user_id],
   };
   res.render("error", templatevars);
 });
@@ -182,18 +175,18 @@ app.get("/error", (req, res) => {
 app.get("/login", (req, res) => {
   const templatevars = {
     urls: urlDatabase,
-    user: users[req.cookies["user_id"]],
+    user: users[req.session.user_id],
   };
-  const cookie = req.cookies["user_id"];
+  const cookie = req.session.user_id;
   if (cookie) {
-    res.cookie("user_id", cookie);
+    req.session.user_id;
     return res.redirect("/urls");
   }
   res.render("login", templatevars);
 });
 //create short urls
 app.post("/urls", (req, res) => {
-  const cookie = req.cookies["user_id"];
+  const cookie = req.session.user_id;
   if (!cookie) {
     return res.send("You must be logged in to create shortened urls!");
   }
@@ -204,12 +197,11 @@ app.post("/urls", (req, res) => {
 
 //remove urls
 app.post("/urls/:id/delete", (req, res) => {
-  const id = findID(req.params.id)
-  const cookie = req.cookies["user_id"]
+  const cookie = req.session.user_id
   if (!cookie) {
     res.send('please login to view this page')
   };
-  if (cookie !== urlDatabase[id].userID) {
+  if (cookie !== urlDatabase[req.params.id].userID) {
     res.send("you don't have the correct permissions to delete this url")
   }
   delete urlDatabase[req.params.id];
@@ -217,12 +209,11 @@ app.post("/urls/:id/delete", (req, res) => {
 });
 //edit urls in url database
 app.post("/urls/:id", (req, res) => {
-  const id = findID(req.params.id)
-  const cookie = req.cookies["user_id"]
+  const cookie = req.session.user_id
   if (!cookie) {
     res.send('please login to view this page')
   };
-  if (cookie !== urlDatabase[id].userID) {
+  if (cookie !== urlDatabase[req.params.id].userID) {
     res.send("you don't have the correct permissions to delete this url")
   }
   urlDatabase[id].longURL = req.body.longURL;
@@ -249,7 +240,7 @@ app.post("/register", (req, res) => {
     email,
     password: hashed,
   };
-  res.cookie("user_id", id);
+  req.session.user_id;
   res.redirect("/urls");
 });
 app.listen(PORT, () => {

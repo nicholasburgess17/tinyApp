@@ -22,12 +22,22 @@ const findUserByEmail = (email) => {
     }
   }
 };
-const findID = (identity) => {
+const findID = (identity, urlDatabase) => {
   for (let id in urlDatabase) {
     if(identity === id){
       return id;
     }
   }
+};
+//returns urls for logged in user
+const urlsForUser = (id) => {
+  let result = {};
+for (let shortURLS in urlDatabase) {
+  if (id === urlDatabase[shortURLS].userID) {
+    result[shortURLS] = urlDatabase[shortURLS]
+    }
+  }
+  return result;
 }
 
 //objects
@@ -42,14 +52,14 @@ const urlDatabase = {
   },
   b2xVn2: {
     longURL: "http://www.lighthouselabs.ca",
-    userID: "6hTvQ7"
+    userID: "h6TvQ7"
   }
 };
 const users = {
-  userRandomID: {
-    id: "userRandomID",
+  h6TvQ7: {
+    id: "h6TvQ7",
     email: "user@example.com",
-    password: "purple-monkey-dinosaur",
+    password: "1234",
   },
   user2RandomID: {
     id: "user2RandomID",
@@ -90,11 +100,12 @@ app.post("/logout", (req, res) => {
 });
 //main page
 app.get("/urls", (req, res) => {
+  const cookie = req.cookies["user_id"];
+  const filtered = urlsForUser(cookie, urlDatabase)
   const templatevars = {
-    urls: urlDatabase,
+    urls: filtered,
     user: users[req.cookies["user_id"]],
   };
-  const cookie = req.cookies["user_id"];
   if(!cookie) {
     res.send("maybe you should login first")
   }
@@ -111,23 +122,27 @@ app.get("/urls/new", (req, res) => {
 });
 //individual url pages
 app.get("/urls/:id", (req, res) => {
-  let id = findID(req.params.id)
+  const  id = findID(req.params.id)
   const templatevars = {
     id: req.params.id,
     longURL: urlDatabase[id].longURL,
     user: users[req.cookies["user_id"]],
   };
+  const cookie = req.cookies["user_id"]
+  if (!cookie) {
+    res.send('please login to view this page')
+  };
+  if (cookie !== urlDatabase[id].userID) {
+    res.send("you don't have the correct permissions to view this url")
+  }
   res.render("urls_show", templatevars);
 });
 //small url redirect to original url
 app.get("/u/:id", (req, res) => {
-  let id = req.params.id;
-  const longURL = urlDatabase[id].longURL;
-  for (let shortURLs in urlDatabase) {
-    if(id === shortURLs) {
-      return res.redirect(longURL);
-    }
-}
+  if (Object.keys(urlDatabase).includes(req.params.id)) {
+    let longURL = urlDatabase[req.params.id].longURL;
+    return res.redirect(longURL);
+  }
 return res.send("that tinyURL doesnt exist!");
 });
 //register users
@@ -184,13 +199,29 @@ app.post("/urls", (req, res) => {
 
 //remove urls
 app.post("/urls/:id/delete", (req, res) => {
+  const id = findID(req.params.id)
+  const cookie = req.cookies["user_id"]
+  if (!cookie) {
+    res.send('please login to view this page')
+  };
+  if (cookie !== urlDatabase[id].userID) {
+    res.send("you don't have the correct permissions to delete this url")
+  }
   delete urlDatabase[req.params.id];
   res.redirect("/urls/");
 });
-//add new urls to url database
+//edit urls in url database
 app.post("/urls/:id", (req, res) => {
-  const id = req.params[id];
-  urlDatabaseid = req.body[id].longURL;
+  const id = findID(req.params.id)
+  const cookie = req.cookies["user_id"]
+  if (!cookie) {
+    res.send('please login to view this page')
+  };
+  if (cookie !== urlDatabase[id].userID) {
+    res.send("you don't have the correct permissions to delete this url")
+  }
+  urlDatabase[id].longURL = req.body.longURL;
+  urlDatabase[id].userID = req.session.userID;
   res.redirect("/urls");
 });
 //create user ID
@@ -206,7 +237,7 @@ app.post("/register", (req, res) => {
     return;
   }
   //Setting the new user after all the validations are checked.
-  const id = generateRandomString(4).trim();
+  const id = generateRandomString(6).trim();
   users[id] = {
     id,
     email,

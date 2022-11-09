@@ -76,8 +76,6 @@ app.post("/login", (req, res) => {
   const password = req.body.password;
   const email = req.body.email;
   const user = findUserByEmail(email);
-  console.log(user.password)
-  console.log(password)
   if (!bcrypt.compareSync(password, user.password)) {
     return res.send("error 403, Password is incorrect");
   }
@@ -191,7 +189,9 @@ app.post("/urls", (req, res) => {
     return res.send("You must be logged in to create shortened urls!");
   }
   const id = generateRandomString(6);
-  urlDatabase[id].longURL = req.body.longURL; // save new url to database
+  urlDatabase[id] = {};
+  urlDatabase[id].longURL = req.body.longURL;
+  urlDatabase[id].userID = req.session.user_id;
   return res.redirect(`/urls/${id}`);
 });
 

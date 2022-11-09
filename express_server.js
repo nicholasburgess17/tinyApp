@@ -1,38 +1,13 @@
 const express = require("express");
 const app = express();
-const bcrypt = require("bcryptjs")
-const cookieSession =require("cookie-session")
+const bcrypt = require("bcryptjs");
+const cookieSession = require("cookie-session");
 const PORT = 8080;
 
 app.set("view engine", "ejs");
 
 //helper functions
-const generateRandomString = (length) => {
-  let string = "abcdefghijklmnopqrstuvwxyz1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-  result = " ";
-  for (let i = 0; i < length; i++) {
-    result += string.charAt(Math.floor(Math.random() * string.length));
-  }
-  return result;
-};
-const findUserByEmail = (email) => {
-  for (let userID in users) {
-    if (users[userID].email === email) {
-      const user = users[userID];
-      return user;
-    }
-  }
-};
-//returns urls for logged in user
-const urlsForUser = (id) => {
-  let result = {};
-for (let shortURLS in urlDatabase) {
-  if (id === urlDatabase[shortURLS].userID) {
-    result[shortURLS] = urlDatabase[shortURLS]
-    }
-  }
-  return result;
-}
+const { findUserByEmail, generateRandomString, urlsForUser } = require("./helper")
 
 //objects
 const urlDatabase = {
@@ -46,8 +21,8 @@ const urlDatabase = {
   },
   b2xVn2: {
     longURL: "http://www.lighthouselabs.ca",
-    userID: "h6TvQ7"
-  }
+    userID: "h6TvQ7",
+  },
 };
 const users = {
   h6TvQ7: {
@@ -63,10 +38,12 @@ const users = {
 };
 
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieSession({
-  name: 'session',
-  keys: ['key1'],
-}))
+app.use(
+  cookieSession({
+    name: "session",
+    keys: ["key1"],
+  })
+);
 //JSON everything
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
@@ -75,16 +52,16 @@ app.get("/urls.json", (req, res) => {
 app.post("/login", (req, res) => {
   const password = req.body.password;
   const email = req.body.email;
-  const user = findUserByEmail(email);
+  const user = findUserByEmail(email, users);
   if (!bcrypt.compareSync(password, user.password)) {
     return res.send("error 403, Password is incorrect");
   }
   if (!user) {
-    return res.send("Error 403, No account with this email exists"); 
-  } 
-    const userID = user.id;
-    req.session.user_id = userID;
-    return res.redirect("/urls");
+    return res.send("Error 403, No account with this email exists");
+  }
+  const userID = user.id;
+  req.session.user_id = userID;
+  return res.redirect("/urls");
 });
 
 //logout
@@ -94,23 +71,22 @@ app.post("/logout", (req, res) => {
 });
 //main page
 app.get("/urls", (req, res) => {
-
   const cookie = req.session.user_id;
-  if(!cookie) {
-    res.send("maybe you should login first")
+  if (!cookie) {
+    res.send("maybe you should login first");
   }
-  const filtered = urlsForUser(cookie, urlDatabase)
+  const filtered = urlsForUser(cookie, urlDatabase);
   const templatevars = {
     urls: filtered,
     user: users[cookie],
-    userID: cookie
+    userID: cookie,
   };
-  
+
   res.render("urls_index", templatevars);
 });
 //add new urls
 app.get("/urls/new", (req, res) => {
-  const templatevars = { user: users[req.session.user_id]};
+  const templatevars = { user: users[req.session.user_id] };
   const cookie = req.session.user_id;
   if (!cookie) {
     return res.redirect("/login");
@@ -124,12 +100,12 @@ app.get("/urls/:id", (req, res) => {
     longURL: urlDatabase[req.params.id].longURL,
     user: users[req.session.user_id],
   };
-  const cookie = req.session.user_id
+  const cookie = req.session.user_id;
   if (!cookie) {
-    res.send('please login to view this page')
-  };
+    res.send("please login to view this page");
+  }
   if (cookie !== urlDatabase[req.params.id].userID) {
-    res.send("you don't have the correct permissions to view this url")
+    res.send("you don't have the correct permissions to view this url");
   }
   res.render("urls_show", templatevars);
 });
@@ -139,7 +115,7 @@ app.get("/u/:id", (req, res) => {
     let longURL = urlDatabase[req.params.id].longURL;
     return res.redirect(longURL);
   }
-return res.send("that tinyURL doesnt exist!");
+  return res.send("that tinyURL doesnt exist!");
 });
 //register users
 app.get("/register", (req, res) => {
@@ -149,7 +125,7 @@ app.get("/register", (req, res) => {
   };
   const cookie = req.session.user_id;
   if (cookie) {
-    req.session.user_id
+    req.session.user_id;
     return res.redirect("/urls");
   }
   res.render("register", templatevars);
@@ -197,24 +173,24 @@ app.post("/urls", (req, res) => {
 
 //remove urls
 app.post("/urls/:id/delete", (req, res) => {
-  const cookie = req.session.user_id
+  const cookie = req.session.user_id;
   if (!cookie) {
-    res.send('please login to view this page')
-  };
+    res.send("please login to view this page");
+  }
   if (cookie !== urlDatabase[req.params.id].userID) {
-    res.send("you don't have the correct permissions to delete this url")
+    res.send("you don't have the correct permissions to delete this url");
   }
   delete urlDatabase[req.params.id];
   res.redirect("/urls/");
 });
 //edit urls in url database
 app.post("/urls/:id", (req, res) => {
-  const cookie = req.session.user_id
+  const cookie = req.session.user_id;
   if (!cookie) {
-    res.send('please login to view this page')
-  };
+    res.send("please login to view this page");
+  }
   if (cookie !== urlDatabase[req.params.id].userID) {
-    res.send("you don't have the correct permissions to delete this url")
+    res.send("you don't have the correct permissions to delete this url");
   }
   urlDatabase[id].longURL = req.body.longURL;
   urlDatabase[id].userID = req.session.userID;
@@ -224,12 +200,12 @@ app.post("/urls/:id", (req, res) => {
 app.post("/register", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
-  const hashed = bcrypt.hashSync(password, 10)
+  const hashed = bcrypt.hashSync(password, 10);
   if (!email || !password) {
     res.redirect("/error_page");
     return;
   }
-  if (findUserByEmail(email)) {
+  if (findUserByEmail(email, users)) {
     res.redirect("/error");
     return;
   }

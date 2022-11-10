@@ -88,7 +88,6 @@ app.get("/urls", (req, res) => {
   const templatevars = {
     urls: filtered,
     user: users[cookie],
-    userID: cookie,
   };
 
   res.render("urls_index", templatevars);
@@ -171,7 +170,7 @@ app.post("/urls/:id/delete", (req, res) => {
   if (!cookie) {
     res.send("please login to view this page");
   }
-  if (cookie !== urlDatabase[req.params.id].userID) {
+  if (cookie === urlDatabase[req.params.id].userID) {
     res.send("you don't have the correct permissions to delete this url");
   }
   delete urlDatabase[req.params.id];
@@ -181,13 +180,9 @@ app.post("/urls/:id/delete", (req, res) => {
 app.post("/urls/:id", (req, res) => {
   const cookie = req.session.user_id;
   if (!cookie) {
-    res.send("please login to view this page");
+    return res.send("please login to view this page");
   }
-  if (cookie !== urlDatabase[req.params.id].userID) {
-    res.send("you don't have the correct permissions to delete this url");
-  }
-  urlDatabase[id].longURL = req.body.longURL;
-  urlDatabase[id].userID = req.session.userID;
+  urlDatabase[req.params.id].longURL = req.body.longURL;
   res.redirect("/urls");
 });
 //create user ID
@@ -210,7 +205,7 @@ app.post("/register", (req, res) => {
     email,
     password: hashed,
   };
-  req.session.user_id;
+  req.session.user_id = id;
   res.redirect("/urls");
 });
 app.listen(PORT, () => {

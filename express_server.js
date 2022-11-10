@@ -82,7 +82,8 @@ app.post("/logout", (req, res) => {
 app.get("/urls", (req, res) => {
   const cookie = req.session.user_id;
   if (!cookie) {
-    res.send("maybe you should login first");
+    return res.redirect("/login")
+    
   }
   const filtered = urlsForUser(cookie, urlDatabase);
   const templatevars = {

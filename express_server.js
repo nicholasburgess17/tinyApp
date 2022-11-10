@@ -1,3 +1,11 @@
+//helper functions
+const {
+  findUserByEmail,
+  generateRandomString,
+  urlsForUser,
+} = require("./helper");
+
+
 const express = require("express");
 const app = express();
 const bcrypt = require("bcryptjs");
@@ -5,13 +13,13 @@ const cookieSession = require("cookie-session");
 const PORT = 8080;
 
 app.set("view engine", "ejs");
-
-//helper functions
-const {
-  findUserByEmail,
-  generateRandomString,
-  urlsForUser,
-} = require("./helper");
+app.use(express.urlencoded({ extended: true }));
+app.use(
+  cookieSession({
+    name: "session",
+    keys: ["key1"],
+  })
+);
 
 //objects
 const urlDatabase = {
@@ -41,13 +49,7 @@ const users = {
   },
 };
 
-app.use(express.urlencoded({ extended: true }));
-app.use(
-  cookieSession({
-    name: "session",
-    keys: ["key1"],
-  })
-);
+
 //JSON everything
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
@@ -57,6 +59,9 @@ app.post("/login", (req, res) => {
   const password = req.body.password;
   const email = req.body.email;
   const user = findUserByEmail(email, users);
+  if (!email && !password) {
+    return res.send('please enter a vaild email and password')
+  }
   if (!bcrypt.compareSync(password, user.password)) {
     return res.send("error 403, Password is incorrect");
   }
@@ -190,7 +195,7 @@ app.post("/register", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
   const hashed = bcrypt.hashSync(password, 10);
-  if (!email || !password) {
+  if (!email && !password) {
     res.send('you need to input a valid password and email')
     return;
   }

@@ -171,7 +171,7 @@ app.post("/urls/:id/delete", (req, res) => {
   if (!cookie) {
     res.send("please login to view this page");
   }
-  if (cookie === urlDatabase[req.params.id].userID) {
+  if (cookie !== urlDatabase[req.params.id].userID) {
     res.send("you don't have the correct permissions to delete this url");
   }
   delete urlDatabase[req.params.id];
